@@ -44,56 +44,56 @@ public class RNStringeeRoomModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void makeRoom(Callback callback) {
-        mCallback = callback;
-
-        if (StringeeManager.getInstance().getClient() == null) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.", 0);
-            return;
-        }
-
-        mRoom = new StringeeRoom(StringeeManager.getInstance().getClient());
-        mRoom.setRoomListener(this);
-        mRoom.makeRoom();
+//        mCallback = callback;
+//
+//        if (StringeeManager.getInstance().getClient() == null) {
+//            callback.invoke(false, -1, "StringeeClient is not initialized or connected.", 0);
+//            return;
+//        }
+//
+//        mRoom = new StringeeRoom(StringeeManager.getInstance().getClient());
+//        mRoom.setRoomListener(this);
+//        mRoom.makeRoom();
     }
 
     @ReactMethod
     public void destroy(int roomId, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
-        if (roomId <= 0) {
-            callback.invoke(false, -2, "The room id is invalid.");
-            return;
-        }
-
-        StringeeRoom mRoom = StringeeManager.getInstance().getRoomsMap().get(roomId);
-        if (mRoom == null) {
-            callback.invoke(false, -3, "The room is not found.");
-            return;
-        }
-
-        mRoom.leaveRoom();
-        callback.invoke(true, 0, "Success");
+//        if (StringeeManager.getInstance().getClient() == null) {
+//            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
+//            return;
+//        }
+//
+//        if (roomId <= 0) {
+//            callback.invoke(false, -2, "The room id is invalid.");
+//            return;
+//        }
+//
+//        StringeeRoom mRoom = StringeeManager.getInstance().getRoomsMap().get(roomId);
+//        if (mRoom == null) {
+//            callback.invoke(false, -3, "The room is not found.");
+//            return;
+//        }
+//
+//        mRoom.leaveRoom();
+//        callback.invoke(true, 0, "Success");
     }
 
     @ReactMethod
     public void joinRoom(int roomId, Callback callback) {
-        mCallback = callback;
-        if (StringeeManager.getInstance().getClient() == null) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.", roomId);
-            return;
-        }
-
-        if (roomId <= 0) {
-            callback.invoke(false, -2, "The room id is invalid.", roomId);
-            return;
-        }
-
-        StringeeRoom mRoom = new StringeeRoom(StringeeManager.getInstance().getClient(), roomId);
-        mRoom.setRoomListener(this);
-        mRoom.joinRoom();
+//        mCallback = callback;
+//        if (StringeeManager.getInstance().getClient() == null) {
+//            callback.invoke(false, -1, "StringeeClient is not initialized or connected.", roomId);
+//            return;
+//        }
+//
+//        if (roomId <= 0) {
+//            callback.invoke(false, -2, "The room id is invalid.", roomId);
+//            return;
+//        }
+//
+//        StringeeRoom mRoom = new StringeeRoom(StringeeManager.getInstance().getClient(), roomId);
+//        mRoom.setRoomListener(this);
+//        mRoom.joinRoom();
     }
 
     @ReactMethod

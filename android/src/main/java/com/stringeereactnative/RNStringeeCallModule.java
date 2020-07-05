@@ -10,6 +10,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.stringee.StringeeClient;
 import com.stringee.call.StringeeCall;
 import com.stringee.common.StringeeConstant;
 import com.stringee.exception.StringeeError;
@@ -20,7 +21,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class RNStringeeCallModule extends ReactContextBaseJavaModule implements StringeeCall.StringeeCallListener {
+public class RNStringeeCallModule extends ReactContextBaseJavaModule {
 
     private Callback mCallback;
     private ArrayList<String> jsEvents = new ArrayList<String>();
@@ -35,14 +36,15 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
     }
 
     @ReactMethod
-    public void makeCall(String params, Callback callback) {
+    public void makeCall(String instanceId, String params, Callback callback) {
         mCallback = callback;
-        if (StringeeManager.getInstance().getClient() == null) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
             callback.invoke(false, -1, "StringeeClient is not initialized or connected.", "");
             return;
         }
 
-        if (!StringeeManager.getInstance().getClient().isConnected()) {
+        if (!mClient.isConnected()) {
             callback.invoke(false, -1, "StringeeClient is not initialized or connected.", "");
             return;
         }
@@ -55,8 +57,8 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
             String resolution = jsonObject.optString("videoResolution");
 
 
-            StringeeCall mStringeeCall = new StringeeCall(getReactApplicationContext(), StringeeManager.getInstance().getClient(), from, to);
-            mStringeeCall.setCallListener(this);
+            StringeeCall mStringeeCall = new StringeeCall(getReactApplicationContext(), mClient, from, to);
+            mStringeeCall.setCallListener(getCallListener(instanceId));
             mStringeeCall.setVideoCall(isVideoCall);
             if (customData != null) {
                 mStringeeCall.setCustom(customData);
@@ -76,8 +78,9 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
     }
 
     @ReactMethod
-    public void initAnswer(String callId, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
+    public void initAnswer(String instanceId, String callId, Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null || !mClient.isConnected()) {
             callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
             return;
         }
@@ -92,18 +95,13 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
             callback.invoke(false, -3, "The call is not found.");
             return;
         }
-        call.setCallListener(this);
-        call.initAnswer(getReactApplicationContext(), StringeeManager.getInstance().getClient());
+        call.setCallListener(getCallListener(instanceId));
+        call.initAnswer(getReactApplicationContext(), mClient);
         callback.invoke(true, 0, "Success");
     }
 
     @ReactMethod
     public void answer(String callId, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -120,11 +118,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void reject(String callId, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -141,11 +134,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void hangup(String callId, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -162,11 +150,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void enableVideo(String callId, boolean enabled, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -200,11 +183,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void sendCallInfo(String callId, String info, Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -226,11 +204,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void sendDTMF(String callId, String key, final Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.");
             return;
@@ -272,11 +245,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void getCallStats(String callId, final Callback callback) {
-        if (StringeeManager.getInstance().getClient() == null || !StringeeManager.getInstance().getClient().isConnected()) {
-            callback.invoke(false, -1, "StringeeClient is not initialized or connected.", "");
-            return;
-        }
-
         if (callId == null || callId.length() == 0) {
             callback.invoke(false, -2, "The call id is invalid.", "");
             return;
@@ -321,88 +289,6 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
         callback.invoke(true, 0, "Success");
     }
 
-    @Override
-    public void onSignalingStateChange(StringeeCall stringeeCall, StringeeCall.SignalingState signalingState, String reason, int sipCode, String sipReason) {
-        if (contains(jsEvents, "onSignalingStateChange")) {
-            if (signalingState == StringeeCall.SignalingState.CALLING) {
-                StringeeManager.getInstance().getCallsMap().put(stringeeCall.getCallId(), stringeeCall);
-                mCallback.invoke(true, 0, "Success", stringeeCall.getCallId(), stringeeCall.getCustomDataFromYourServer());
-            }
-
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            params.putInt("code", signalingState.getValue());
-            params.putString("reason", reason);
-            params.putInt("sipCode", sipCode);
-            params.putString("sipReason", sipReason);
-            sendEvent(getReactApplicationContext(), "onSignalingStateChange", params);
-        }
-    }
-
-    @Override
-    public void onError(StringeeCall stringeeCall, int code, String desc) {
-        mCallback.invoke(false, code, desc, stringeeCall.getCallId(), stringeeCall.getCustomDataFromYourServer());
-    }
-
-    @Override
-    public void onHandledOnAnotherDevice(StringeeCall stringeeCall, StringeeCall.SignalingState signalingState, String s) {
-        if (contains(jsEvents, "onHandledOnAnotherDevice")) {
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            params.putInt("code", signalingState.getValue());
-            params.putString("description", s);
-            sendEvent(getReactApplicationContext(), "onHandledOnAnotherDevice", params);
-        }
-    }
-
-    @Override
-    public void onMediaStateChange(StringeeCall stringeeCall, StringeeCall.MediaState mediaState) {
-        if (contains(jsEvents, "onMediaStateChange")) {
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            int code = -1;
-            String desc = "";
-            if (mediaState == StringeeCall.MediaState.CONNECTED) {
-                code = 0;
-                desc = "Connected";
-            } else if (mediaState == StringeeCall.MediaState.DISCONNECTED) {
-                code = 1;
-                desc = "Disconnected";
-            }
-            params.putInt("code", code);
-            params.putString("description", desc);
-            sendEvent(getReactApplicationContext(), "onMediaStateChange", params);
-        }
-    }
-
-    @Override
-    public void onLocalStream(StringeeCall stringeeCall) {
-        if (contains(jsEvents, "onLocalStream")) {
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            sendEvent(getReactApplicationContext(), "onLocalStream", params);
-        }
-    }
-
-    @Override
-    public void onRemoteStream(StringeeCall stringeeCall) {
-        if (contains(jsEvents, "onRemoteStream")) {
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            sendEvent(getReactApplicationContext(), "onRemoteStream", params);
-        }
-    }
-
-    @Override
-    public void onCallInfo(StringeeCall stringeeCall, JSONObject jsonObject) {
-        if (contains(jsEvents, "onCallInfo")) {
-            WritableMap params = Arguments.createMap();
-            params.putString("callId", stringeeCall.getCallId());
-            params.putString("data", jsonObject.toString());
-            sendEvent(getReactApplicationContext(), "onCallInfo", params);
-        }
-    }
-
     private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap eventData) {
         reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
@@ -427,5 +313,92 @@ public class RNStringeeCallModule extends ReactContextBaseJavaModule implements 
             }
         }
         return false;
+    }
+
+    private StringeeCall.StringeeCallListener getCallListener(String instanceId) {
+        return new StringeeCall.StringeeCallListener() {
+            @Override
+            public void onSignalingStateChange(StringeeCall stringeeCall, StringeeCall.SignalingState signalingState, String reason, int sipCode, String sipReason) {
+                if (contains(jsEvents, "onSignalingStateChange")) {
+                    if (signalingState == StringeeCall.SignalingState.CALLING) {
+                        StringeeManager.getInstance().getCallsMap().put(stringeeCall.getCallId(), stringeeCall);
+                        mCallback.invoke(true, 0, "Success", stringeeCall.getCallId(), stringeeCall.getCustomDataFromYourServer());
+                    }
+
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    params.putInt("code", signalingState.getValue());
+                    params.putString("reason", reason);
+                    params.putInt("sipCode", sipCode);
+                    params.putString("sipReason", sipReason);
+
+                    sendEvent(getReactApplicationContext(), "onSignalingStateChange", params);
+                }
+            }
+
+            @Override
+            public void onError(StringeeCall stringeeCall, int code, String desc) {
+                mCallback.invoke(false, code, desc, stringeeCall.getCallId(), stringeeCall.getCustomDataFromYourServer());
+            }
+
+            @Override
+            public void onHandledOnAnotherDevice(StringeeCall stringeeCall, StringeeCall.SignalingState signalingState, String s) {
+                if (contains(jsEvents, "onHandledOnAnotherDevice")) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    params.putInt("code", signalingState.getValue());
+                    params.putString("description", s);
+                    sendEvent(getReactApplicationContext(), "onHandledOnAnotherDevice", params);
+                }
+            }
+
+            @Override
+            public void onMediaStateChange(StringeeCall stringeeCall, StringeeCall.MediaState mediaState) {
+                if (contains(jsEvents, "onMediaStateChange")) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    int code = -1;
+                    String desc = "";
+                    if (mediaState == StringeeCall.MediaState.CONNECTED) {
+                        code = 0;
+                        desc = "Connected";
+                    } else if (mediaState == StringeeCall.MediaState.DISCONNECTED) {
+                        code = 1;
+                        desc = "Disconnected";
+                    }
+                    params.putInt("code", code);
+                    params.putString("description", desc);
+                    sendEvent(getReactApplicationContext(), "onMediaStateChange", params);
+                }
+            }
+
+            @Override
+            public void onLocalStream(StringeeCall stringeeCall) {
+                if (contains(jsEvents, "onLocalStream")) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    sendEvent(getReactApplicationContext(), "onLocalStream", params);
+                }
+            }
+
+            @Override
+            public void onRemoteStream(StringeeCall stringeeCall) {
+                if (contains(jsEvents, "onRemoteStream")) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    sendEvent(getReactApplicationContext(), "onRemoteStream", params);
+                }
+            }
+
+            @Override
+            public void onCallInfo(StringeeCall stringeeCall, JSONObject jsonObject) {
+                if (contains(jsEvents, "onCallInfo")) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("callId", stringeeCall.getCallId());
+                    params.putString("data", jsonObject.toString());
+                    sendEvent(getReactApplicationContext(), "onCallInfo", params);
+                }
+            }
+        };
     }
 }
