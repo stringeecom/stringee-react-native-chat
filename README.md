@@ -5,6 +5,9 @@
 
 `$ npm install stringee-react-native-chat --save`
 
+## Version 0.2.1
+- Support multiple clients
+
 ## Version 0.2.0
 - Bug fixes: restart ice for one way stream call
 
