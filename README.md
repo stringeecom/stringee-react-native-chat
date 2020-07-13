@@ -5,6 +5,9 @@
 
 `$ npm install stringee-react-native-chat --save`
 
+## Version 0.2.3
+- Bug fixes: api markConversationAsRead Android
+
 ## Version 0.2.2
 - Fix bug for ES6, React Component doesn't auto bind methods to itself
 
