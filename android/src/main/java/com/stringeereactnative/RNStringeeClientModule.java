@@ -1564,23 +1564,30 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        mClient.getConversation(convId, new CallbackListener<Conversation>() {
+        mClient.getConversationFromServer(convId, new CallbackListener<Conversation>() {
             @Override
             public void onSuccess(Conversation conversation) {
-                Message message = conversation.getLastMessage(mContext);
-                if (message != null) {
-                    message.markAsRead(mClient, new StatusListener() {
-                        @Override
-                        public void onSuccess() {
-                            callback.invoke(true, 0, "Success");
-                        }
+                conversation.getLastMessages(mClient, true, true, 1, new CallbackListener<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        if (messages != null && messages.size() > 0) {
+                            Message message = messages.get(0);
+                            if (message != null) {
+                                message.markAsRead(mClient, new StatusListener() {
+                                    @Override
+                                    public void onSuccess() {
+                                        callback.invoke(true, 0, "Success");
+                                    }
 
-                        @Override
-                        public void onError(StringeeError error) {
-                            callback.invoke(false, error.getCode(), error.getMessage());
+                                    @Override
+                                    public void onError(StringeeError error) {
+                                        callback.invoke(false, error.getCode(), error.getMessage());
+                                    }
+                                });
+                            }
                         }
-                    });
-                }
+                    }
+                });
             }
         });
     }
