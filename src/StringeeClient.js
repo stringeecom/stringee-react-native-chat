@@ -25,6 +25,33 @@ export default class extends Component {
     // Sinh uuid va tao wrapper object trong native
     this.uuid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     RNStringeeClient.createClientWrapper(this.uuid);
+
+    this.getId = this.getId.bind(this);
+    this.connect = this.connect.bind(this);
+    this.disconnect = this.disconnect.bind(this);
+    this.registerPush = this.registerPush.bind(this);
+    this.unregisterPush = this.unregisterPush.bind(this);
+    this.sendCustomMessage = this.sendCustomMessage.bind(this);
+    this.createConversation = this.createConversation.bind(this);
+    this.getConversationById = this.getConversationById.bind(this);
+    this.getLocalConversations = this.getLocalConversations.bind(this);
+    this.getLastConversations = this.getLastConversations.bind(this);
+    this.getConversationsAfter = this.getConversationsAfter.bind(this);
+    this.getConversationsBefore = this.getConversationsBefore.bind(this);
+    this.deleteConversation = this.deleteConversation.bind(this);
+    this.addParticipants = this.addParticipants.bind(this);
+    this.removeParticipants = this.removeParticipants.bind(this);
+    this.updateConversation = this.updateConversation.bind(this);
+    this.markConversationAsRead = this.markConversationAsRead.bind(this);
+    this.getConversationWithUser = this.getConversationWithUser.bind(this);
+    this.getUnreadConversationCount = this.getUnreadConversationCount.bind(this);
+    this.sendMessage = this.sendMessage.bind(this);
+    this.deleteMessage = this.deleteMessage.bind(this);
+    this.getLocalMessages = this.getLocalMessages.bind(this);
+    this.getLastMessages = this.getLastMessages.bind(this);
+    this.getMessagesAfter = this.getMessagesAfter.bind(this);
+    this.getMessagesBefore = this.getMessagesBefore.bind(this);
+    this.clearDb = this.clearDb.bind(this);
   }
 
   componentWillMount() {

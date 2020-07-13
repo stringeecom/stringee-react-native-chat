@@ -5,6 +5,12 @@
 
 `$ npm install stringee-react-native-chat --save`
 
+## Version 0.2.2
+- Fix bug for ES6, React Component doesn't auto bind methods to itself
+
+## Version 0.2.1
+- Support multiple clients
+
 ## Version 0.2.0
 - Bug fixes: restart ice for one way stream call
 
