@@ -298,6 +298,25 @@ export default class extends Component {
     });
   }
 
+  getAllLastConversations(count, isAscending, callback) {
+    RNStringeeClient.getAllLastConversations(this.uuid, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          // Tăng dần -> Cần đảo mảng
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
   getConversationsAfter(datetime, count, isAscending, callback) {
     RNStringeeClient.getConversationsAfter(this.uuid, datetime, count, (status, code, message, conversations) => {
       var returnConversations = [];
@@ -316,8 +335,99 @@ export default class extends Component {
     });
   }
 
+  getAllConversationsAfter(datetime, count, isAscending, callback) {
+    RNStringeeClient.getAllConversationsAfter(this.uuid, datetime, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
   getConversationsBefore(datetime, count, isAscending, callback) {
     RNStringeeClient.getConversationsBefore(this.uuid, datetime, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
+  getAllConversationsBefore(datetime, count, isAscending, callback) {
+    RNStringeeClient.getAllConversationsBefore(this.uuid, datetime, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
+  getLastUnreadConversations(count, isAscending, callback) {
+    RNStringeeClient.getLastUnreadConversations(this.uuid, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          // Tăng dần -> Cần đảo mảng
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
+  getUnreadConversationsAfter(datetime, count, isAscending, callback) {
+    RNStringeeClient.getUnreadConversationsAfter(this.uuid, datetime, count, (status, code, message, conversations) => {
+      var returnConversations = [];
+      if (status) {
+        if (isAscending) {
+          conversations.reverse().map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        } else {
+          conversations.map((conversation) => {
+            returnConversations.push(new Conversation(conversation));
+          });
+        }
+      }
+      return callback(status, code, message, returnConversations);
+    });
+  }
+
+  getUnreadConversationsBefore(datetime, count, isAscending, callback) {
+    RNStringeeClient.getUnreadConversationsBefore(this.uuid, datetime, count, (status, code, message, conversations) => {
       var returnConversations = [];
       if (status) {
         if (isAscending) {

@@ -6,6 +6,10 @@
 `$ npm install stringee-react-native-chat --save`
 
 ## Version 0.2.3
+- Add api for unread conversation and api for loading deleted conversation
+- Upgrade iOS native SDK to version 0.2.9
+
+## Version 0.2.3
 - Bug fixes: api markConversationAsRead Android
 
 ## Version 0.2.2
