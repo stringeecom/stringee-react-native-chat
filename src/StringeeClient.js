@@ -36,8 +36,11 @@ export default class extends Component {
     this.getConversationById = this.getConversationById.bind(this);
     this.getLocalConversations = this.getLocalConversations.bind(this);
     this.getLastConversations = this.getLastConversations.bind(this);
+	this.getAllLastConversations = this.getAllLastConversations.bind(this);
     this.getConversationsAfter = this.getConversationsAfter.bind(this);
+	this.getAllConversationsAfter = this.getAllConversationsAfter.bind(this);
     this.getConversationsBefore = this.getConversationsBefore.bind(this);
+	this.getAllConversationsBefore = this.getAllConversationsBefore.bind(this);
     this.deleteConversation = this.deleteConversation.bind(this);
     this.addParticipants = this.addParticipants.bind(this);
     this.removeParticipants = this.removeParticipants.bind(this);
@@ -51,6 +54,12 @@ export default class extends Component {
     this.getLastMessages = this.getLastMessages.bind(this);
     this.getMessagesAfter = this.getMessagesAfter.bind(this);
     this.getMessagesBefore = this.getMessagesBefore.bind(this);
+	this.getLastUnreadConversations = this.getLastUnreadConversations.bind(this);
+    this.getUnreadConversationsBefore = this.getUnreadConversationsBefore.bind(this);
+    this.getUnreadConversationsAfter = this.getUnreadConversationsAfter.bind(this);
+	this.getAllLastMessages = this.getAllLastMessages.bind(this);
+	this.getAllMessagesAfter = this.getAllMessagesAfter.bind(this);
+	this.getAllMessagesBefore = this.getAllMessagesBefore.bind(this);
     this.clearDb = this.clearDb.bind(this);
   }
 

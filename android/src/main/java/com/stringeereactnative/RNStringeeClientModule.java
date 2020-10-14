@@ -2,7 +2,8 @@ package com.stringeereactnative;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -17,6 +18,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.stringee.StringeeClient;
 import com.stringee.call.StringeeCall;
+import com.stringee.call.StringeeCall2;
 import com.stringee.exception.StringeeError;
 import com.stringee.listener.StatusListener;
 import com.stringee.listener.StringeeConnectionListener;
@@ -119,6 +121,11 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
                         params.putMap("data", data);
                         sendEvent(getReactApplicationContext(), "onIncomingCall", params);
                     }
+                }
+
+                @Override
+                public void onIncomingCall2(StringeeCall2 stringeeCall2) {
+
                 }
 
                 @Override
@@ -1182,7 +1189,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
         mClient.getConversation(convId, new CallbackListener<Conversation>() {
             @Override
             public void onSuccess(Conversation conversation) {
-                conversation.getLastMessages(mClient, loadDeletedMsg, loadDeletedMsgContent, count, new CallbackListener<List<Message>>() {
+                conversation.getLastMessages(mClient, count, loadDeletedMsg, loadDeletedMsgContent, false, new CallbackListener<List<Message>>() {
                     @Override
                     public void onSuccess(List<Message> messages) {
                         WritableArray params = Arguments.createArray();
@@ -1303,7 +1310,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
         mClient.getConversation(convId, new CallbackListener<Conversation>() {
             @Override
             public void onSuccess(Conversation conversation) {
-                conversation.getMessagesAfter(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, new CallbackListener<List<Message>>() {
+                conversation.getMessagesAfter(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, false, new CallbackListener<List<Message>>() {
                     @Override
                     public void onSuccess(List<Message> messages) {
                         WritableArray params = Arguments.createArray();
@@ -1423,7 +1430,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
         mClient.getConversation(convId, new CallbackListener<Conversation>() {
             @Override
             public void onSuccess(Conversation conversation) {
-                conversation.getMessagesBefore(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, new CallbackListener<List<Message>>() {
+                conversation.getMessagesBefore(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, false, new CallbackListener<List<Message>>() {
                     @Override
                     public void onSuccess(List<Message> messages) {
                         WritableArray params = Arguments.createArray();
@@ -1567,7 +1574,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
         mClient.getConversationFromServer(convId, new CallbackListener<Conversation>() {
             @Override
             public void onSuccess(Conversation conversation) {
-                conversation.getLastMessages(mClient, true, true, 1, new CallbackListener<List<Message>>() {
+                conversation.getLastMessages(mClient, 1, true, true, false, new CallbackListener<List<Message>>() {
                     @Override
                     public void onSuccess(List<Message> messages) {
                         if (messages != null && messages.size() > 0) {
@@ -1745,6 +1752,752 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
             @Override
             public void onSuccess(Integer count) {
                 callback.invoke(true, 0, "Success", count);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getLastUnreadConversations(String instanceId, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized");
+            return;
+        }
+
+        mClient.getLastUnreadConversations(count, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getUnreadConversationsBefore(String instanceId, double datetime, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getUnreadConversationsBefore((long) datetime, count, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getUnreadConversationsAfter(String instanceId, double datetime, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getUnreadConversationsAfter((long) datetime, count, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getAllLastConversations(String instanceId, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized");
+            return;
+        }
+
+        mClient.getLastConversations(count, true, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getAllConversationsBefore(String instanceId, double datetime, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getConversationsBefore((long) datetime, count, true, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getAllConversationsAfter(String instanceId, double datetime, int count, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getConversationsAfter((long) datetime, count, true, new CallbackListener<List<Conversation>>() {
+            @Override
+            public void onSuccess(List<Conversation> conversations) {
+                WritableArray params = Arguments.createArray();
+                for (int i = 0; i < conversations.size(); i++) {
+                    Conversation conversation = conversations.get(i);
+                    WritableMap param = Arguments.createMap();
+                    param.putString("id", conversation.getId());
+                    param.putString("localId", conversation.getLocalId());
+                    param.putString("name", conversation.getName());
+                    param.putBoolean("isDistinct", conversation.isDistinct());
+                    param.putBoolean("isGroup", conversation.isGroup());
+                    param.putDouble("updatedAt", conversation.getUpdateAt());
+                    param.putString("lastMsgSender", conversation.getLastMsgSender());
+                    param.putString("text", conversation.getText());
+                    param.putInt("lastMsgType", conversation.getLastMsgType());
+                    param.putInt("unreadCount", conversation.getTotalUnread());
+                    param.putString("lastMsgId", conversation.getLastMsgId());
+                    param.putString("creator", conversation.getCreator());
+                    param.putDouble("created", conversation.getCreateAt());
+                    param.putDouble("lastMsgSeq", conversation.getLastMsgSeqReceived());
+                    param.putDouble("lastMsgCreatedAt", conversation.getLastTimeNewMsg());
+                    param.putInt("lastMsgState", conversation.getLastMsgState());
+                    if (conversation.getLastMsg() != null) {
+                        try {
+                            Bundle bundle = jsonToBundle(conversation.getLastMsg());
+                            WritableMap lastMsgMap = Arguments.fromBundle(bundle);
+                            param.putMap("text", lastMsgMap);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    List<User> participants = conversation.getParticipants();
+                    WritableArray participantsMap = Arguments.createArray();
+                    for (int j = 0; j < participants.size(); j++) {
+                        User user = participants.get(j);
+                        WritableMap userMap = Arguments.createMap();
+                        userMap.putString("userId", user.getUserId());
+                        userMap.putString("name", user.getName());
+                        userMap.putString("avatar", user.getAvatarUrl());
+                        participantsMap.pushMap(userMap);
+                    }
+                    param.putArray("participants", participantsMap);
+
+                    params.pushMap(param);
+                }
+                callback.invoke(true, 0, "Success", params);
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getAllLastMessages(String instanceId, String convId, final int count, boolean loadDeletedMsg, boolean loadDeletedMsgContent, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getConversation(convId, new CallbackListener<Conversation>() {
+            @Override
+            public void onSuccess(Conversation conversation) {
+                conversation.getLastMessages(mClient, count, loadDeletedMsg, loadDeletedMsgContent, true, new CallbackListener<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        WritableArray params = Arguments.createArray();
+                        for (int i = 0; i < messages.size(); i++) {
+                            Message message = messages.get(i);
+                            WritableMap param = Arguments.createMap();
+                            param.putString("id", message.getId());
+                            param.putString("localId", message.getLocalId());
+                            param.putString("conversationId", message.getConversationId());
+                            param.putDouble("createdAt", message.getCreatedAt());
+                            param.putInt("state", message.getState().getValue());
+                            param.putDouble("sequence", message.getSequence());
+                            param.putInt("type", message.getType());
+                            WritableMap contentMap = Arguments.createMap();
+                            switch (message.getType()) {
+                                case 1:
+                                    contentMap.putString("content", message.getText());
+                                    break;
+                                case 2:
+                                    WritableMap photoMap = Arguments.createMap();
+                                    photoMap.putString("filePath", message.getFileUrl());
+                                    photoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    photoMap.putDouble("ratio", message.getImageRatio());
+                                    contentMap.putMap("photo", photoMap);
+                                    break;
+                                case 3:
+                                    WritableMap videoMap = Arguments.createMap();
+                                    videoMap.putString("filePath", message.getFileUrl());
+                                    videoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    videoMap.putDouble("ratio", message.getImageRatio());
+                                    videoMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("video", videoMap);
+                                    break;
+                                case 4:
+                                    WritableMap audioMap = Arguments.createMap();
+                                    audioMap.putString("filePath", message.getFileUrl());
+                                    audioMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("audio", audioMap);
+                                    break;
+                                case 5:
+                                    WritableMap fileMap = Arguments.createMap();
+                                    fileMap.putString("filePath", message.getFileUrl());
+                                    fileMap.putString("filename", message.getFileName());
+                                    fileMap.putDouble("length", message.getFileLength());
+                                    contentMap.putMap("file", fileMap);
+                                    break;
+                                case 7:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                                case 9:
+                                    WritableMap locationMap = Arguments.createMap();
+                                    locationMap.putDouble("lat", message.getLatitude());
+                                    locationMap.putDouble("lon", message.getLongitude());
+                                    contentMap.putMap("location", locationMap);
+                                    break;
+                                case 10:
+                                    WritableMap contactMap = Arguments.createMap();
+                                    contactMap.putString("vcard", message.getContact());
+                                    contentMap.putMap("contact", contactMap);
+                                    break;
+                                case 11:
+                                    WritableMap stickerMap = Arguments.createMap();
+                                    stickerMap.putString("name", message.getStickerName());
+                                    stickerMap.putString("category", message.getStickerCategory());
+                                    contentMap.putMap("sticker", stickerMap);
+                                    break;
+                                case 100:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                            }
+                            param.putMap("content", contentMap);
+                            String senderId = message.getSenderId();
+                            User user = mClient.getUser(senderId);
+                            String name = "";
+                            if (user != null) {
+                                name = user.getName();
+                                if (name == null || name.length() == 0) {
+                                    name = user.getUserId();
+                                }
+                            }
+                            param.putString("sender", name);
+                            params.pushMap(param);
+                        }
+                        callback.invoke(true, 0, "Success", params);
+                    }
+
+                    @Override
+                    public void onError(StringeeError error) {
+                        callback.invoke(false, error.getCode(), error.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+
+    @ReactMethod
+    public void getAllMessagesAfter(String instanceId, String convId, final int sequence, final int count, boolean loadDeletedMsg, boolean loadDeletedMsgContent, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getConversation(convId, new CallbackListener<Conversation>() {
+            @Override
+            public void onSuccess(Conversation conversation) {
+                conversation.getMessagesAfter(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, true, new CallbackListener<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        WritableArray params = Arguments.createArray();
+                        for (int i = 0; i < messages.size(); i++) {
+                            Message message = messages.get(i);
+                            WritableMap param = Arguments.createMap();
+                            param.putString("id", message.getId());
+                            param.putString("localId", message.getLocalId());
+                            param.putString("conversationId", message.getConversationId());
+                            param.putDouble("createdAt", message.getCreatedAt());
+                            param.putInt("state", message.getState().getValue());
+                            param.putDouble("sequence", message.getSequence());
+                            param.putInt("type", message.getType());
+                            WritableMap contentMap = Arguments.createMap();
+                            switch (message.getType()) {
+                                case 1:
+                                    contentMap.putString("content", message.getText());
+                                    break;
+                                case 2:
+                                    WritableMap photoMap = Arguments.createMap();
+                                    photoMap.putString("filePath", message.getFileUrl());
+                                    photoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    photoMap.putDouble("ratio", message.getImageRatio());
+                                    contentMap.putMap("photo", photoMap);
+                                    break;
+                                case 3:
+                                    WritableMap videoMap = Arguments.createMap();
+                                    videoMap.putString("filePath", message.getFileUrl());
+                                    videoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    videoMap.putDouble("ratio", message.getImageRatio());
+                                    videoMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("video", videoMap);
+                                    break;
+                                case 4:
+                                    WritableMap audioMap = Arguments.createMap();
+                                    audioMap.putString("filePath", message.getFileUrl());
+                                    audioMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("audio", audioMap);
+                                    break;
+                                case 5:
+                                    WritableMap fileMap = Arguments.createMap();
+                                    fileMap.putString("filePath", message.getFileUrl());
+                                    fileMap.putString("filename", message.getFileName());
+                                    fileMap.putDouble("length", message.getFileLength());
+                                    contentMap.putMap("file", fileMap);
+                                    break;
+                                case 7:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                                case 9:
+                                    WritableMap locationMap = Arguments.createMap();
+                                    locationMap.putDouble("lat", message.getLatitude());
+                                    locationMap.putDouble("lon", message.getLongitude());
+                                    contentMap.putMap("location", locationMap);
+                                    break;
+                                case 10:
+                                    WritableMap contactMap = Arguments.createMap();
+                                    contactMap.putString("vcard", message.getContact());
+                                    contentMap.putMap("contact", contactMap);
+                                    break;
+                                case 11:
+                                    WritableMap stickerMap = Arguments.createMap();
+                                    stickerMap.putString("name", message.getStickerName());
+                                    stickerMap.putString("category", message.getStickerCategory());
+                                    contentMap.putMap("sticker", stickerMap);
+                                    break;
+                                case 100:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                            }
+                            param.putMap("content", contentMap);
+                            String senderId = message.getSenderId();
+                            User user = mClient.getUser(senderId);
+                            String name = "";
+                            if (user != null) {
+                                name = user.getName();
+                                if (name == null || name.length() == 0) {
+                                    name = user.getUserId();
+                                }
+                            }
+                            param.putString("sender", name);
+                            params.pushMap(param);
+                        }
+                        callback.invoke(true, 0, "Success", params);
+                    }
+
+                    @Override
+                    public void onError(StringeeError error) {
+                        callback.invoke(false, error.getCode(), error.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onError(StringeeError error) {
+                callback.invoke(false, error.getCode(), error.getMessage());
+            }
+        });
+    }
+
+    @ReactMethod
+    public void getAllMessagesBefore(String instanceId, String convId, final int sequence, final int count, boolean loadDeletedMsg, boolean loadDeletedMsgContent, final Callback callback) {
+        StringeeClient mClient = StringeeManager.getInstance().getClientsMap().get(instanceId);
+        if (mClient == null) {
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
+            return;
+        }
+
+        mClient.getConversation(convId, new CallbackListener<Conversation>() {
+            @Override
+            public void onSuccess(Conversation conversation) {
+                conversation.getMessagesBefore(mClient, sequence, count, loadDeletedMsg, loadDeletedMsgContent, true, new CallbackListener<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        WritableArray params = Arguments.createArray();
+                        for (int i = 0; i < messages.size(); i++) {
+                            Message message = messages.get(i);
+                            WritableMap param = Arguments.createMap();
+                            param.putString("id", message.getId());
+                            param.putString("localId", message.getLocalId());
+                            param.putString("conversationId", message.getConversationId());
+                            param.putDouble("createdAt", message.getCreatedAt());
+                            param.putInt("state", message.getState().getValue());
+                            param.putDouble("sequence", message.getSequence());
+                            param.putInt("type", message.getType());
+                            WritableMap contentMap = Arguments.createMap();
+                            switch (message.getType()) {
+                                case 1:
+                                    contentMap.putString("content", message.getText());
+                                    break;
+                                case 2:
+                                    WritableMap photoMap = Arguments.createMap();
+                                    photoMap.putString("filePath", message.getFileUrl());
+                                    photoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    photoMap.putDouble("ratio", message.getImageRatio());
+                                    contentMap.putMap("photo", photoMap);
+                                    break;
+                                case 3:
+                                    WritableMap videoMap = Arguments.createMap();
+                                    videoMap.putString("filePath", message.getFileUrl());
+                                    videoMap.putString("thumbnail", message.getThumbnailUrl());
+                                    videoMap.putDouble("ratio", message.getImageRatio());
+                                    videoMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("video", videoMap);
+                                    break;
+                                case 4:
+                                    WritableMap audioMap = Arguments.createMap();
+                                    audioMap.putString("filePath", message.getFileUrl());
+                                    audioMap.putInt("duration", message.getDuration());
+                                    contentMap.putMap("audio", audioMap);
+                                    break;
+                                case 5:
+                                    WritableMap fileMap = Arguments.createMap();
+                                    fileMap.putString("filePath", message.getFileUrl());
+                                    fileMap.putString("filename", message.getFileName());
+                                    fileMap.putDouble("length", message.getFileLength());
+                                    contentMap.putMap("file", fileMap);
+                                    break;
+                                case 7:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+
+                                case 9:
+                                    WritableMap locationMap = Arguments.createMap();
+                                    locationMap.putDouble("lat", message.getLatitude());
+                                    locationMap.putDouble("lon", message.getLongitude());
+                                    contentMap.putMap("location", locationMap);
+                                    break;
+                                case 10:
+                                    WritableMap contactMap = Arguments.createMap();
+                                    contactMap.putString("vcard", message.getContact());
+                                    contentMap.putMap("contact", contactMap);
+                                    break;
+                                case 11:
+                                    WritableMap stickerMap = Arguments.createMap();
+                                    stickerMap.putString("name", message.getStickerName());
+                                    stickerMap.putString("category", message.getStickerCategory());
+                                    contentMap.putMap("sticker", stickerMap);
+                                    break;
+                                case 100:
+                                    try {
+                                        contentMap = Arguments.fromBundle(jsonToBundle(message.getText()));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                            }
+                            param.putMap("content", contentMap);
+                            String senderId = message.getSenderId();
+                            User user = mClient.getUser(senderId);
+                            String name = "";
+                            if (user != null) {
+                                name = user.getName();
+                                if (name == null || name.length() == 0) {
+                                    name = user.getUserId();
+                                }
+                            }
+                            param.putString("sender", name);
+                            params.pushMap(param);
+                        }
+                        callback.invoke(true, 0, "Success", params);
+                    }
+
+                    @Override
+                    public void onError(StringeeError error) {
+                        callback.invoke(false, error.getCode(), error.getMessage());
+                    }
+                });
             }
 
             @Override
