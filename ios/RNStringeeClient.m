@@ -1002,6 +1002,32 @@ RCT_EXPORT_METHOD(getLastMessages:(NSString *)uuid conversationId:(NSString *)co
     }];
 }
 
+RCT_EXPORT_METHOD(getAllLastMessages:(NSString *)uuid conversationId:(NSString *)conversationId count:(NSUInteger)count loadDeletedMessage:(BOOL)loadDeletedMessage loadDeletedMessageContent:(BOOL)loadDeletedMessageContent callback:(RCTResponseSenderBlock)callback) {
+    
+    RNClientWrapper *wrapper = [RNStringeeInstanceManager.instance.clientWrappers objectForKey:uuid];
+    if (wrapper == nil) {
+        callback(@[@(NO), @(-1), @"Wrapper is not found"]);
+        return;
+    }
+    
+    if (!wrapper.client || !wrapper.client.hasConnected) {
+        callback(@[@(NO), @(-1), @"StringeeClient is not initialized or connected."]);
+        return;
+    }
+
+    // Lấy về conversation
+    [wrapper.client getConversationWithConversationId:conversationId completionHandler:^(BOOL status, int code, NSString *message, StringeeConversation *conversation) {
+        if (!conversation) {
+            callback(@[@(NO), @(-3), @"Conversation not found.", [NSNull null]]);
+            return;
+        }
+        
+        [conversation getLastMessagesWithCount:count loadDeletedMessage:loadDeletedMessage loadDeletedMessageContent:loadDeletedMessageContent loadHistory:true completionHandler:^(BOOL status, int code, NSString *message, NSArray<StringeeMessage *> *messages) {
+            callback(@[@(status), @(code), message, [RCTConvert StringeeMessages:[[messages reverseObjectEnumerator] allObjects]]]);
+        }];
+    }];
+}
+
 RCT_EXPORT_METHOD(getMessagesAfter:(NSString *)uuid conversationId:(NSString *)conversationId sequence:(NSUInteger)sequence count:(NSUInteger)count loadDeletedMessage:(BOOL)loadDeletedMessage loadDeletedMessageContent:(BOOL)loadDeletedMessageContent callback:(RCTResponseSenderBlock)callback) {
     
     RNClientWrapper *wrapper = [RNStringeeInstanceManager.instance.clientWrappers objectForKey:uuid];
@@ -1028,6 +1054,32 @@ RCT_EXPORT_METHOD(getMessagesAfter:(NSString *)uuid conversationId:(NSString *)c
     }];
 }
 
+RCT_EXPORT_METHOD(getAllMessagesAfter:(NSString *)uuid conversationId:(NSString *)conversationId sequence:(NSUInteger)sequence count:(NSUInteger)count loadDeletedMessage:(BOOL)loadDeletedMessage loadDeletedMessageContent:(BOOL)loadDeletedMessageContent callback:(RCTResponseSenderBlock)callback) {
+    
+    RNClientWrapper *wrapper = [RNStringeeInstanceManager.instance.clientWrappers objectForKey:uuid];
+    if (wrapper == nil) {
+        callback(@[@(NO), @(-1), @"Wrapper is not found"]);
+        return;
+    }
+    
+    if (!wrapper.client || !wrapper.client.hasConnected) {
+        callback(@[@(NO), @(-1), @"StringeeClient is not initialized or connected."]);
+        return;
+    }
+    
+    // Lấy về conversation
+    [wrapper.client getConversationWithConversationId:conversationId completionHandler:^(BOOL status, int code, NSString *message, StringeeConversation *conversation) {
+        if (!conversation) {
+            callback(@[@(NO), @(-3), @"Conversation not found.", [NSNull null]]);
+            return;
+        }
+        
+        [conversation getMessagesAfter:sequence withCount:count loadDeletedMessage:loadDeletedMessage loadDeletedMessageContent:loadDeletedMessageContent loadHistory:true completionHandler:^(BOOL status, int code, NSString *message, NSArray<StringeeMessage *> *messages) {
+            callback(@[@(status), @(code), message, [RCTConvert StringeeMessages:messages]]);
+        }];
+    }];
+}
+
 RCT_EXPORT_METHOD(getMessagesBefore:(NSString *)uuid conversationId:(NSString *)conversationId sequence:(NSUInteger)sequence count:(NSUInteger)count loadDeletedMessage:(BOOL)loadDeletedMessage loadDeletedMessageContent:(BOOL)loadDeletedMessageContent callback:(RCTResponseSenderBlock)callback) {
     
     RNClientWrapper *wrapper = [RNStringeeInstanceManager.instance.clientWrappers objectForKey:uuid];
@@ -1049,6 +1101,32 @@ RCT_EXPORT_METHOD(getMessagesBefore:(NSString *)uuid conversationId:(NSString *)
         }
         
         [conversation getMessagesBefore:sequence withCount:count loadDeletedMessage:loadDeletedMessage loadDeletedMessageContent:loadDeletedMessageContent completionHandler:^(BOOL status, int code, NSString *message, NSArray<StringeeMessage *> *messages) {
+            callback(@[@(status), @(code), message, [RCTConvert StringeeMessages:[[messages reverseObjectEnumerator] allObjects]]]);
+        }];
+    }];
+}
+
+RCT_EXPORT_METHOD(getAllMessagesBefore:(NSString *)uuid conversationId:(NSString *)conversationId sequence:(NSUInteger)sequence count:(NSUInteger)count loadDeletedMessage:(BOOL)loadDeletedMessage loadDeletedMessageContent:(BOOL)loadDeletedMessageContent callback:(RCTResponseSenderBlock)callback) {
+    
+    RNClientWrapper *wrapper = [RNStringeeInstanceManager.instance.clientWrappers objectForKey:uuid];
+    if (wrapper == nil) {
+        callback(@[@(NO), @(-1), @"Wrapper is not found"]);
+        return;
+    }
+    
+    if (!wrapper.client || !wrapper.client.hasConnected) {
+        callback(@[@(NO), @(-1), @"StringeeClient is not initialized or connected."]);
+        return;
+    }
+    
+    // Lấy về conversation
+    [wrapper.client getConversationWithConversationId:conversationId completionHandler:^(BOOL status, int code, NSString *message, StringeeConversation *conversation) {
+        if (!conversation) {
+            callback(@[@(NO), @(-3), @"Conversation not found.", [NSNull null]]);
+            return;
+        }
+        
+        [conversation getMessagesBefore:sequence withCount:count loadDeletedMessage:loadDeletedMessage loadDeletedMessageContent:loadDeletedMessageContent loadHistory:true completionHandler:^(BOOL status, int code, NSString *message, NSArray<StringeeMessage *> *messages) {
             callback(@[@(status), @(code), message, [RCTConvert StringeeMessages:[[messages reverseObjectEnumerator] allObjects]]]);
         }];
     }];

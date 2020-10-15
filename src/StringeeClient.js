@@ -36,11 +36,11 @@ export default class extends Component {
     this.getConversationById = this.getConversationById.bind(this);
     this.getLocalConversations = this.getLocalConversations.bind(this);
     this.getLastConversations = this.getLastConversations.bind(this);
-	this.getAllLastConversations = this.getAllLastConversations.bind(this);
+	  this.getAllLastConversations = this.getAllLastConversations.bind(this);
     this.getConversationsAfter = this.getConversationsAfter.bind(this);
-	this.getAllConversationsAfter = this.getAllConversationsAfter.bind(this);
+	  this.getAllConversationsAfter = this.getAllConversationsAfter.bind(this);
     this.getConversationsBefore = this.getConversationsBefore.bind(this);
-	this.getAllConversationsBefore = this.getAllConversationsBefore.bind(this);
+	  this.getAllConversationsBefore = this.getAllConversationsBefore.bind(this);
     this.deleteConversation = this.deleteConversation.bind(this);
     this.addParticipants = this.addParticipants.bind(this);
     this.removeParticipants = this.removeParticipants.bind(this);
@@ -54,12 +54,12 @@ export default class extends Component {
     this.getLastMessages = this.getLastMessages.bind(this);
     this.getMessagesAfter = this.getMessagesAfter.bind(this);
     this.getMessagesBefore = this.getMessagesBefore.bind(this);
-	this.getLastUnreadConversations = this.getLastUnreadConversations.bind(this);
+	  this.getLastUnreadConversations = this.getLastUnreadConversations.bind(this);
     this.getUnreadConversationsBefore = this.getUnreadConversationsBefore.bind(this);
     this.getUnreadConversationsAfter = this.getUnreadConversationsAfter.bind(this);
-	this.getAllLastMessages = this.getAllLastMessages.bind(this);
-	this.getAllMessagesAfter = this.getAllMessagesAfter.bind(this);
-	this.getAllMessagesBefore = this.getAllMessagesBefore.bind(this);
+	  this.getAllLastMessages = this.getAllLastMessages.bind(this);
+	  this.getAllMessagesAfter = this.getAllMessagesAfter.bind(this);
+	  this.getAllMessagesBefore = this.getAllMessagesBefore.bind(this);
     this.clearDb = this.clearDb.bind(this);
   }
 
@@ -547,6 +547,24 @@ export default class extends Component {
     });
   }
 
+  getAllLastMessages(conversationId, count, isAscending, loadDeletedMessage, loadDeletedMessageContent, callback) {
+    RNStringeeClient.getAllLastMessages(this.uuid, conversationId, count, loadDeletedMessage, loadDeletedMessageContent, (status, code, message, messages) => {
+      var returnMessages = [];
+      if (status) {
+        if (isAscending) {
+          messages.map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        } else {
+          messages.reverse().map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        }
+      }
+      return callback(status, code, message, returnMessages);
+    });
+  }
+
   getMessagesAfter(conversationId, sequence, count, isAscending, loadDeletedMessage, loadDeletedMessageContent, callback) {
     RNStringeeClient.getMessagesAfter(this.uuid, conversationId, sequence, count, loadDeletedMessage, loadDeletedMessageContent, (status, code, message, messages) => {
       var returnMessages = [];
@@ -565,8 +583,44 @@ export default class extends Component {
     });
   }
 
+  getAllMessagesAfter(conversationId, sequence, count, isAscending, loadDeletedMessage, loadDeletedMessageContent, callback) {
+    RNStringeeClient.getAllMessagesAfter(this.uuid, conversationId, sequence, count, loadDeletedMessage, loadDeletedMessageContent, (status, code, message, messages) => {
+      var returnMessages = [];
+      if (status) {
+        if (isAscending) {
+          messages.map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        } else {
+          messages.reverse().map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        }
+      }
+      return callback(status, code, message, returnMessages);
+    });
+  }
+
   getMessagesBefore(conversationId, sequence, count, isAscending, loadDeletedMessage, loadDeletedMessageContent, callback) {
     RNStringeeClient.getMessagesBefore(this.uuid, conversationId, sequence, count, loadDeletedMessage, loadDeletedMessageContent, (status, code, message, messages) => {
+      var returnMessages = [];
+      if (status) {
+        if (isAscending) {
+          messages.map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        } else {
+          messages.reverse().map((msg) => {
+            returnMessages.push(new Message(msg));
+          });
+        }
+      }
+      return callback(status, code, message, returnMessages);
+    });
+  }
+
+  getAllMessagesBefore(conversationId, sequence, count, isAscending, loadDeletedMessage, loadDeletedMessageContent, callback) {
+    RNStringeeClient.getAllMessagesBefore(this.uuid, conversationId, sequence, count, loadDeletedMessage, loadDeletedMessageContent, (status, code, message, messages) => {
       var returnMessages = [];
       if (status) {
         if (isAscending) {
