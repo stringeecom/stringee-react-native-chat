@@ -31,8 +31,8 @@ import com.stringee.messaging.User;
 import com.stringee.messaging.listeners.CallbackListener;
 import com.stringee.messaging.listeners.ChangeEventListenter;
 
-import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
             mClient.setConnectionListener(new StringeeConnectionListener() {
                 @Override
                 public void onConnectionConnected(StringeeClient stringeeClient, boolean b) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onConnectionConnected")) {
                         WritableMap data = Arguments.createMap();
                         data.putString("userId", stringeeClient.getUserId());
@@ -82,13 +82,12 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onConnectionDisconnected(StringeeClient stringeeClient, boolean b) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onConnectionDisconnected")) {
                         WritableMap data = Arguments.createMap();
                         data.putString("userId", stringeeClient.getUserId());
                         data.putInt("projectId", stringeeClient.getProjectId());
                         data.putBoolean("isReconnecting", b);
-
                         WritableMap params = Arguments.createMap();
                         params.putString("uuid", instanceId);
                         params.putMap("data", data);
@@ -98,7 +97,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onIncomingCall(StringeeCall stringeeCall) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onIncomingCall")) {
                         StringeeManager.getInstance().getCallsMap().put(stringeeCall.getCallId(), stringeeCall);
                         WritableMap data = Arguments.createMap();
@@ -125,12 +124,31 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onIncomingCall2(StringeeCall2 stringeeCall2) {
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
+                    if (jsEvents != null && contains(jsEvents, "onIncomingCall2")) {
+                        StringeeManager.getInstance().getCalls2Map().put(stringeeCall2.getCallId(), stringeeCall2);
+                        WritableMap data = Arguments.createMap();
+                        data.putString("userId", finalClient.getUserId());
+                        data.putString("callId", stringeeCall2.getCallId());
+                        data.putString("from", stringeeCall2.getFrom());
+                        data.putString("to", stringeeCall2.getTo());
+                        data.putString("fromAlias", stringeeCall2.getFromAlias());
+                        data.putString("toAlias", stringeeCall2.getToAlias());
+                        int callType = 2;
+                        data.putInt("callType", callType);
+                        data.putBoolean("isVideoCall", stringeeCall2.isVideoCall());
+                        data.putString("customDataFromYourServer", stringeeCall2.getCustomDataFromYourServer());
 
+                        WritableMap params = Arguments.createMap();
+                        params.putString("uuid", instanceId);
+                        params.putMap("data", data);
+                        sendEvent(getReactApplicationContext(), "onIncomingCall2", params);
+                    }
                 }
 
                 @Override
                 public void onConnectionError(StringeeClient stringeeClient, StringeeError stringeeError) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onConnectionError")) {
                         WritableMap data = Arguments.createMap();
                         data.putInt("code", stringeeError.getCode());
@@ -145,7 +163,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onRequestNewToken(StringeeClient stringeeClient) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onRequestNewToken")) {
                         sendEvent(getReactApplicationContext(), "onRequestNewToken", null);
                     }
@@ -153,7 +171,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onCustomMessage(String s, JSONObject jsonObject) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onCustomMessage")) {
                         WritableMap data = Arguments.createMap();
                         data.putString("from", s);
@@ -168,13 +186,23 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onTopicMessage(String s, JSONObject jsonObject) {
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
+                    if (jsEvents != null && contains(jsEvents, "onTopicMessage")) {
+                        WritableMap data = Arguments.createMap();
+                        data.putString("from", s);
+                        data.putString("data", jsonObject.toString());
 
+                        WritableMap params = Arguments.createMap();
+                        params.putString("uuid", instanceId);
+                        params.putMap("data", data);
+                        sendEvent(getReactApplicationContext(), "onTopicMessage", params);
+                    }
                 }
             });
             mClient.setChangeEventListenter(new ChangeEventListenter() {
                 @Override
                 public void onChangeEvent(StringeeChange stringeeChange) {
-                    List<String> jsEvents = eventsMap.get(instanceId);
+                    ArrayList<String> jsEvents = eventsMap.get(instanceId);
                     if (jsEvents != null && contains(jsEvents, "onChangeEvent")) {
                         WritableMap data = Arguments.createMap();
                         StringeeObject.Type objectType = stringeeChange.getObjectType();
@@ -323,7 +351,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
     public void connect(String instanceId, String accessToken) {
         StringeeClient mClient = mStringeeManager.getClientsMap().get(instanceId);
         if (mClient.isConnected()) {
-            List<String> jsEvents = eventsMap.get(instanceId);
+            ArrayList<String> jsEvents = eventsMap.get(instanceId);
             if (jsEvents != null && contains(jsEvents, "onConnectionConnected")) {
                 WritableMap data = Arguments.createMap();
                 data.putString("userId", mClient.getUserId());
@@ -394,7 +422,7 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
     public void sendCustomMessage(String instanceId, String toUser, String msg, final Callback callback) {
         StringeeClient mClient = mStringeeManager.getClientsMap().get(instanceId);
         if (mClient == null) {
-            callback.invoke(false, -1, "StringeeClient is not initialized");
+            callback.invoke(false, -1, "StringeeClient is not initialized or connected");
             return;
         }
 
@@ -415,42 +443,6 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
             e.printStackTrace();
             callback.invoke(false, -2, "Message is not not in JSON format");
         }
-    }
-
-    private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap eventData) {
-        reactContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, eventData);
-    }
-
-    @ReactMethod
-    public void setNativeEvent(String instanceId, String event) {
-        ArrayList<String> jsEvents = eventsMap.get(instanceId);
-        if (jsEvents != null) {
-            jsEvents.add(event);
-        } else {
-            jsEvents = new ArrayList<>();
-            jsEvents.add(event);
-            eventsMap.put(instanceId, jsEvents);
-        }
-    }
-
-    @ReactMethod
-    public void removeNativeEvent(String instanceId, String event) {
-        List<String> jsEvents = eventsMap.get(instanceId);
-        if (jsEvents != null) {
-            jsEvents.remove(event);
-        }
-    }
-
-    private boolean contains(List<String> array, String value) {
-
-        for (int i = 0; i < array.size(); i++) {
-            if (array.get(i).equals(value)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @ReactMethod
@@ -1004,35 +996,42 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
                         message = new Message(msgMap.getString("content"));
                         break;
                     case 2:
-                        message.setFileUrl(msgMap.getString("filePath"));
-                        message.setThumbnailUrl(msgMap.getString("thumbnail"));
-                        message.setImageRatio((float) msgMap.getDouble("ratio"));
+                        ReadableMap photoMap = msgMap.getMap("photo");
+                        message.setFileUrl(photoMap.getString("filePath"));
+                        message.setThumbnailUrl(photoMap.getString("thumbnail"));
+                        message.setImageRatio((float) photoMap.getDouble("ratio"));
                         break;
                     case 3:
-                        message.setFileUrl(msgMap.getString("filePath"));
-                        message.setThumbnailUrl(msgMap.getString("thumbnail"));
-                        message.setImageRatio((float) msgMap.getDouble("ratio"));
-                        message.setDuration(msgMap.getInt("duration"));
+                        ReadableMap videoMap = msgMap.getMap("video");
+                        message.setFileUrl(videoMap.getString("filePath"));
+                        message.setThumbnailUrl(videoMap.getString("thumbnail"));
+                        message.setImageRatio((float) videoMap.getDouble("ratio"));
+                        message.setDuration(videoMap.getInt("duration"));
                         break;
                     case 4:
-                        message.setFileUrl(msgMap.getString("filePath"));
-                        message.setDuration(msgMap.getInt("duration"));
+                        ReadableMap audioMap = msgMap.getMap("audio");
+                        message.setFileUrl(audioMap.getString("filePath"));
+                        message.setDuration(audioMap.getInt("duration"));
                         break;
                     case 5:
-                        message.setFileUrl(msgMap.getString("filePath"));
-                        message.setFileName(msgMap.getString("filename"));
-                        message.setFileLength(msgMap.getInt("length"));
+                        ReadableMap fileMap = msgMap.getMap("file");
+                        message.setFileUrl(fileMap.getString("filePath"));
+                        message.setFileName(fileMap.getString("filename"));
+                        message.setFileLength(fileMap.getInt("length"));
                         break;
                     case 9:
-                        message.setLatitude(msgMap.getDouble("lat"));
-                        message.setLongitude(msgMap.getDouble("lon"));
+                        ReadableMap locationMap = msgMap.getMap("location");
+                        message.setLatitude(locationMap.getDouble("lat"));
+                        message.setLongitude(locationMap.getDouble("lon"));
                         break;
                     case 10:
-                        message.setContact(msgMap.getString("vcard"));
+                        ReadableMap contactMap = msgMap.getMap("contact");
+                        message.setContact(contactMap.getString("vcard"));
                         break;
                     case 11:
-                        message.setStickerCategory(msgMap.getString("category"));
-                        message.setStickerName(msgMap.getString("name"));
+                        ReadableMap stickerMap = msgMap.getMap("sticker");
+                        message.setStickerCategory(stickerMap.getString("category"));
+                        message.setStickerName(stickerMap.getString("name"));
                         break;
                     default:
                         break;
@@ -2518,5 +2517,40 @@ public class RNStringeeClientModule extends ReactContextBaseJavaModule {
         }
         return bundle;
     }
-}
 
+    private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap eventData) {
+        reactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, eventData);
+    }
+
+    @ReactMethod
+    public void setNativeEvent(String instanceId, String event) {
+        ArrayList<String> jsEvents = eventsMap.get(instanceId);
+        if (jsEvents != null) {
+            jsEvents.add(event);
+        } else {
+            jsEvents = new ArrayList<>();
+            jsEvents.add(event);
+            eventsMap.put(instanceId, jsEvents);
+        }
+    }
+
+    @ReactMethod
+    public void removeNativeEvent(String instanceId, String event) {
+        ArrayList<String> jsEvents = eventsMap.get(instanceId);
+        if (jsEvents != null) {
+            jsEvents.remove(event);
+        }
+    }
+
+    private boolean contains(ArrayList array, String value) {
+
+        for (int i = 0; i < array.size(); i++) {
+            if (array.get(i).equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
